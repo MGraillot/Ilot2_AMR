@@ -46,7 +46,7 @@ void loop()
   }
 }*/
 
-// TEST MOTEURS - MOTOREDUCTEURS x2
+/* // TEST MOTEURS - MOTOREDUCTEURS x2
 
 // Motor 1
 #define IN1 18
@@ -113,4 +113,4 @@ void loop()
   delay(5000);
   move_back();
   delay(3000);
-}
+}*/
