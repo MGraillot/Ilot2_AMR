@@ -46,7 +46,7 @@ void loop()
   }
 }*/
 
-/* // TEST MOTEURS - MOTOREDUCTEURS x2
+// TEST MOTEURS - MOTOREDUCTEURS x2
 
 // Motor 1
 #define IN1 18
@@ -87,7 +87,7 @@ void move_back()
   digitalWrite(IN4, HIGH);
 }
 
-void trun_right()
+void turn_right()
 {
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
@@ -95,7 +95,7 @@ void trun_right()
   digitalWrite(IN4, LOW);
 }
 
-void trun_left()
+void turn_left()
 {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
@@ -109,8 +109,8 @@ void loop()
   delay(1000);
   stop();
   delay(2500);
-  trun_right();
+  turn_right();
   delay(5000);
   move_back();
   delay(3000);
-}*/
+}
