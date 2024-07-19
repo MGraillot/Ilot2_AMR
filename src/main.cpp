@@ -46,9 +46,10 @@ void loop()
     delay(1000);
     irrecv.resume();
   }
-}*/
+}
+*/
 
-// TEST MOTEURS - MOTOREDUCTEURS x2 - LINE TRACKING SENSOR
+/* // TEST MOTEURS - MOTOREDUCTEURS x2 - LINE TRACKING SENSOR
 
 // Motor 1
 #define IN1 18
@@ -138,5 +139,34 @@ void loop()
   {
     Serial.print(sensorValue[i]);
     Serial.print('\t');
+  }
+}
+*/
+
+// TEST SCANNING SG90 WITH SENSOR US INSTALL
+#define PIN_SERVO1 23
+Servo SERVO1;
+
+int pos = 0;
+
+void setup()
+{
+  SERVO1.attach(PIN_SERVO1);
+}
+
+void loop()
+{
+  // Changer la position de 0º à 180º, en intervalles de 25 ms
+  for (pos = 0; pos <= 180; pos += 1)
+  {
+    SERVO1.write(pos);
+    delay(25);
+  }
+
+  // Revenir de 180º à 0º, avec des pauses de 25 ms
+  for (pos = 180; pos >= 0; pos -= 1)
+  {
+    SERVO1.write(pos);
+    delay(25);
   }
 }
