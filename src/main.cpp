@@ -3,6 +3,8 @@
 #include <IRremoteESP8266.h>
 #include <IRrecv.h>
 
+#include <stdint.h>
+
 /* // TEST SENSOR IR TELECOMMANDE + COMMAND WITH AMR
 
 #define PIN_IR 17
@@ -46,7 +48,7 @@ void loop()
   }
 }*/
 
-// TEST MOTEURS - MOTOREDUCTEURS x2
+// TEST MOTEURS - MOTOREDUCTEURS x2 - LINE TRACKING SENSOR
 
 // Motor 1
 #define IN1 18
@@ -54,13 +56,25 @@ void loop()
 // Motor 2
 #define IN3 17
 #define IN4 16
+// LINE TRACKING SENSOR
+#define TR_LEFT 20
+#define TR_CENTER 30
+#define TR_RIGHT 12
+uint8_t sensorValue[4]; // create a table with 4 values - unsigned 8 bits (0 to 255)
 
 void setup()
 {
+  Serial.begin(9600);
+
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
+
+  // LINE TRACKING
+  pinMode(TR_LEFT, INPUT);
+  pinMode(TR_CENTER, INPUT);
+  pinMode(TR_RIGHT, INPUT);
 }
 
 void run()
@@ -87,7 +101,7 @@ void move_back()
   digitalWrite(IN4, HIGH);
 }
 
-void trun_right()
+void turn_right()
 {
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
@@ -95,7 +109,7 @@ void trun_right()
   digitalWrite(IN4, LOW);
 }
 
-void trun_left()
+void turn_left()
 {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
@@ -109,10 +123,20 @@ void loop()
   delay(1000);
   stop();
   delay(2500);
-  trun_right();
+  turn_right();
   delay(5000);
   move_back();
   delay(3000);
 
-  // NO JUST
+  // TEST LINE-TRACKING READ DATA
+  sensorValue[0] = digitalRead(TR_LEFT);
+  sensorValue[1] = digitalRead(TR_CENTER);
+  sensorValue[2] = digitalRead(TR_RIGHT);
+  sensorValue[3] = sensorValue[0] << 2 | sensorValue[1] << 1 | sensorValue[2];
+  Serial.print("Sensor Value (L / C / R / ALL) : ");
+  for (int i = 0; i < 4; i++)
+  {
+    Serial.print(sensorValue[i]);
+    Serial.print('\t');
+  }
 }
