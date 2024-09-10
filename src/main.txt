@@ -1,0 +1,256 @@
+#include <Arduino.h>
+#include <ESP32Servo.h>
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <Ultrasonic.h>
+
+#include <stdint.h>
+
+/* // TEST SENSOR IR TELECOMMANDE + COMMAND WITH AMR
+
+#define PIN_IR 17
+#define START_AMR 0xFFA25D     // Button ON-OFF
+#define STOP_AMR 0xFFE21D      // Button MENU
+#define PIN_SERVO01 16         // Servo scan
+#define PIN_DIRECTION_RIGHT 15 // Motor
+
+Servo SG90Servo;
+IRrecv irrecv(PIN_IR);
+decode_results results;
+
+void setup()
+{
+  irrecv.enableIRIn();
+  Serial.begin(9600);
+
+  SG90Servo.attach(PIN_SERVO01);
+  pinMode(PIN_DIRECTION_RIGHT, OUTPUT);
+}
+
+void loop()
+{
+  // ESSAIS IR REMOTE START/STOP ACTION
+
+  if (irrecv.decode(&results))
+  {
+    Serial.println(results.value, HEX);
+    if (results.value == START_AMR)
+    {
+      SG90Servo.write(150);
+      delay(10);
+    }
+    else if (results.value == STOP_AMR)
+    {
+      SG90Servo.write(0);
+      delay(10);
+    }
+    delay(1000);
+    irrecv.resume();
+  }
+}
+*/
+
+// TEST MOTEURS - MOTOREDUCTEURS x2 - LINE TRACKING SENSOR
+
+// Motor 1
+#define IN1 34//18
+#define IN2 35//5
+// Motor 2
+#define IN3 32//17
+#define IN4 33//16
+// ULTRASON + SG90
+#define ULTRASONIC_TRIG_PIN 22 // Broche de déclenchement du capteur ultrason
+#define ULTRASONIC_ECHO_PIN 23 // Broche d'écho du capteur ultrason
+#define SERVO_PIN 21          // Broche de contrôle du servo-moteur
+
+// Constantes pour le fonctionnement du robot
+#define OBSTACLE_DISTANCE 20  // Distance (en cm) à partir de laquelle on considère un obstacle
+#define SERVO_SCAN_DELAY 15   // Délai (en ms) entre chaque pas du servo lors du scan
+
+/*
+// LINE TRACKING SENSOR
+#define TR_LEFT 4
+#define TR_CENTER 0
+#define TR_RIGHT 2
+uint8_t sensorValue[4]; // create a table with 4 values - unsigned 8 bits (0 to 255)
+*/
+
+Servo servoMotor;  // Objet pour contrôler le servo-moteur
+
+void setup()
+{
+  Serial.begin(9600);
+
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  /*
+  // LINE TRACKING
+  pinMode(TR_LEFT, INPUT);
+  pinMode(TR_CENTER, INPUT);
+  pinMode(TR_RIGHT, INPUT);
+  */
+
+  pinMode(ULTRASONIC_TRIG_PIN, OUTPUT);
+  pinMode(ULTRASONIC_ECHO_PIN, INPUT);
+  servoMotor.attach(SERVO_PIN);
+}
+
+void run()
+{
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  Serial.print("RUN RUN");
+}
+
+void stop()
+{
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  Serial.print("STOP");
+}
+
+void move_back()
+{
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  Serial.print("BACK");
+}
+
+void turn_right()
+{
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  Serial.print("TURN RIGHT");
+}
+
+void turn_left()
+{
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  Serial.print("TURN LEFT");
+}
+
+// Fonction pour mesurer la distance avec le capteur ultrason
+int measureDistance() {
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(ULTRASONIC_TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(ULTRASONIC_TRIG_PIN, LOW);
+  
+  long duration = pulseIn(ULTRASONIC_ECHO_PIN, HIGH);
+  return duration * 0.034 / 2;  // Conversion du temps en distance (cm)
+}
+
+// Fonction pour scanner l'environnement à la recherche d'obstacles
+bool scanForObstacles() {
+  for (int angle = 0; angle <= 180; angle += 30) {  // Scan de 0 à 180 degrés par pas de 30
+    servoMotor.write(angle);  // Déplace le servo à l'angle spécifié
+    delay(SERVO_SCAN_DELAY);  // Attend que le servo se positionne
+    int distance = measureDistance();  // Mesure la distance
+    if (distance < OBSTACLE_DISTANCE) {
+      return true;  // Obstacle détecté
+    }
+  }
+  return false;  // Pas d'obstacle détecté
+}
+
+void loop()
+{
+  /*
+  run();
+  delay(1000);
+  stop();
+  delay(2500);
+  turn_right();
+  delay(5000);
+  move_back();
+  delay(3000);
+
+  // TEST LINE-TRACKING READ DATA
+  sensorValue[0] = digitalRead(TR_LEFT);
+  sensorValue[1] = digitalRead(TR_CENTER);
+  sensorValue[2] = digitalRead(TR_RIGHT);
+  sensorValue[3] = sensorValue[0] << 2 | sensorValue[1] << 1 | sensorValue[2];
+  Serial.print("Sensor Value (L / C / R / ALL) : ");
+  for (int i = 0; i < 4; i++)
+  {
+    Serial.print(sensorValue[i]);
+    Serial.print('\t');
+  }
+  */
+
+ if (scanForObstacles()) {
+    Serial.println("Obstacle détecté !");
+    stop();  // Arrête le robot si un obstacle est détecté
+  } else {
+   run();  // Suit la ligne s'il n'y a pas d'obstacle
+  }
+}
+
+/*// TEST SCANNING SG90 WITH SENSOR US INSTALL
+#define PIN_SERVO1 23
+#define PIN_ECHO 26
+#define PIN_TRIG 27
+
+Servo SERVO1;
+Ultrasonic Ultrason(PIN_ECHO, PIN_TRIG);
+
+int pos = 0;
+int dist;
+
+void setup()
+{
+  pinMode(PIN_TRIG, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
+  Serial.begin(9600);
+
+  SERVO1.attach(PIN_SERVO1);
+}
+
+void scaning()
+{
+  // Changer la position de 0º à 180º, en intervalles de 25 ms
+  for (pos = 20; pos <= 160; pos += 1)
+  {
+    SERVO1.write(pos);
+    delay(10);
+  }
+
+  // Revenir de 180º à 0º, avec des pauses de 25 ms
+  for (pos = 160; pos >= 20; pos -= 1)
+  {
+    SERVO1.write(pos);
+    delay(10);
+  }
+}
+
+void scan_ultrason()
+{
+  // Pass INC as a parameter to get the distance in inches
+  dist = Ultrason.read();
+
+  Serial.print("Distance in CM: ");
+  Serial.println(dist);
+  // delay(1000);
+}
+
+void loop()
+{
+  scaning();
+  scan_ultrason();
+}
+*/

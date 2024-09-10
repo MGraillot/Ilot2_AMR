@@ -1,0 +1,122 @@
+#include <Arduino.h>
+#include <ESP32Servo.h>
+
+// Définition des broches pour le capteur ultrason et le servomoteur
+const int TRIG_PIN = 23;
+const int ECHO_PIN = 22;
+const int SERVO_PIN = 21;
+
+// Définition des broches pour les moteurs
+#define IN1 32
+#define IN2 33
+#define IN3 25
+#define IN4 26
+
+Servo myServo; // Création d'un objet Servo pour contrôler le servomoteur
+
+// Variables pour le calcul de la distance
+long duration;
+float distanceCm;
+
+// Paramètres pour le mouvement du servo
+const int SERVO_DELAY = 15;
+const int ANGLE_STEP = 1;
+
+// Constante pour la distance de détection d'obstacle
+const float OBSTACLE_DISTANCE = 7.0;
+
+void setup()
+{
+    Serial.begin(115200);
+
+    // Initialisation des broches du capteur ultrason
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO_PIN, INPUT);
+
+    // Initialisation des broches des moteurs
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
+    pinMode(IN3, OUTPUT);
+    pinMode(IN4, OUTPUT);
+
+    // Attachement du servomoteur
+    myServo.attach(SERVO_PIN);
+
+    Serial.println("Démarrage du robot...");
+}
+
+// Fonction pour mesurer la distance avec le capteur ultrason
+float mesureDistance()
+{
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    duration = pulseIn(ECHO_PIN, HIGH);
+    return duration * 0.034 / 2;
+}
+
+// Fonctions pour contrôler les moteurs
+void runMotors()
+{
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
+    Serial.println("Robot en marche");
+}
+
+void stopMotors()
+{
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, LOW);
+    digitalWrite(IN4, LOW);
+    Serial.println("Robot arrêté");
+}
+
+// Fonction pour déplacer le servo et détecter un obstacle
+bool moveServoSmooth(int startAngle, int endAngle)
+{
+    int step = (startAngle < endAngle) ? ANGLE_STEP : -ANGLE_STEP;
+
+    for (int angle = startAngle; angle != endAngle; angle += step)
+    {
+        myServo.write(angle);
+        delay(SERVO_DELAY);
+
+        distanceCm = mesureDistance();
+
+        if (angle % 10 == 0)
+        {
+            Serial.print("Angle: ");
+            Serial.print(angle);
+            Serial.print("°, Distance: ");
+            Serial.print(distanceCm);
+            Serial.println(" cm");
+
+            if (distanceCm <= OBSTACLE_DISTANCE)
+            {
+                Serial.println("Obstacle détecté ! Arrêt des moteurs.");
+                stopMotors(); // Appel de la fonction pour arrêter les moteurs
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void loop()
+{
+    // Le robot commence à avancer
+    runMotors();
+
+    // Balayage avec le servomoteur pour détecter les obstacles
+    if (moveServoSmooth(0, 180) || moveServoSmooth(180, 0))
+    {
+        // Si un obstacle est détecté, le robot s'arrête et attend
+        delay(2000);
+    }
+}

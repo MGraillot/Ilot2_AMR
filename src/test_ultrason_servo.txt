@@ -1,0 +1,102 @@
+#include <Arduino.h>
+#include <ESP32Servo.h>
+
+// Définition des broches
+const int TRIG_PIN = 23;
+const int ECHO_PIN = 22;
+const int SERVO_PIN = 21;
+
+Servo myServo; // Création d'un objet Servo pour contrôler le servomoteur
+
+// Variables pour le calcul de la distance
+long duration;    // Durée de l'aller-retour de l'onde sonore
+float distanceCm; // Distance calculée en centimètres
+
+// Paramètres pour le mouvement du servo
+const int SERVO_DELAY = 15; // Délai entre chaque micro-mouvement (en ms)
+const int ANGLE_STEP = 1;   // Taille des micro-mouvements (en degrés)
+
+// Constante pour la distance de détection d'obstacle
+const float OBSTACLE_DISTANCE = 7.0; // Distance en cm à laquelle il y a un obstacle
+
+void setup()
+{
+    Serial.begin(115200);
+    pinMode(TRIG_PIN, OUTPUT);
+    pinMode(ECHO_PIN, INPUT);
+    myServo.attach(SERVO_PIN);
+    Serial.println("Test du scanner ultrason optimisé");
+}
+
+// Fonction pour mesurer la distance avec le capteur ultrason
+float mesureDistance()
+{
+    // Génération de l'impulsion ultrasonore
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    // Mesure du temps de l'écho
+    duration = pulseIn(ECHO_PIN, HIGH);
+
+    // Calcul et retour de la distance en centimètres
+    return duration * 0.034 / 2; // Vitesse du son : 340 m/s
+}
+
+// Fonction pour déplacer le servo de manière fluide
+bool moveServoSmooth(int startAngle, int endAngle)
+{
+    // Détermine la direction du mouvement
+    int step = (startAngle < endAngle) ? ANGLE_STEP : -ANGLE_STEP;
+
+    // Boucle de déplacement du servo
+    for (int angle = startAngle; angle != endAngle; angle += step)
+    {
+        myServo.write(angle); // Déplace le servo à l'angle spécifié
+        delay(SERVO_DELAY);   // Petit délai pour un mouvement fluide
+
+        distanceCm = mesureDistance();
+        // Mesure et affichage tous les 10 degrés (EXEMPLE)
+        if (angle % 10 == 0)
+        {
+            distanceCm = mesureDistance();
+            Serial.print("Angle: ");
+            Serial.print(angle);
+            Serial.print("°, Distance: ");
+            Serial.print(distanceCm);
+            Serial.println(" cm");
+
+            // Vérification de la présence d'un obstacle
+            if (distanceCm <= OBSTACLE_DISTANCE)
+            {
+                Serial.println("Obstacle détecté ! Arrêt du servomoteur.");
+                return true; // Obstacle détecté, on arrête le balayage
+            }
+        }
+    }
+    return false; // Pas d'obstacle détecté, balayage complet
+}
+
+/*
+void loop()
+{
+    moveServoSmooth(0, 180); // Balayage de 0 à 180 degrés
+    moveServoSmooth(180, 0); // Balayage de 180 à 0 degrés
+}
+*/
+
+void loop()
+{
+    if (moveServoSmooth(0, 180))
+    {
+        // Si un obstacle est détecté, on attend un moment avant de recommencer
+        delay(2000);
+    }
+    if (moveServoSmooth(180, 0))
+    {
+        // Si un obstacle est détecté, on attend un moment avant de recommencer
+        delay(2000);
+    }
+}
