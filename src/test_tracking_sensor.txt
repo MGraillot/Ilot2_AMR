@@ -1,0 +1,34 @@
+#include <Arduino.h>
+
+// Définitions des broches des capteurs
+#define LEFT_SENSOR_PIN  19  // Capteur gauche
+#define CENTER_SENSOR_PIN 18 // Capteur centre
+#define RIGHT_SENSOR_PIN 5   // Capteur droit
+
+void setup() {
+  // Initialisation des broches des capteurs en tant qu'entrées
+  pinMode(LEFT_SENSOR_PIN, INPUT);
+  pinMode(CENTER_SENSOR_PIN, INPUT);
+  pinMode(RIGHT_SENSOR_PIN, INPUT);
+
+  // Initialisation de la communication série
+  Serial.begin(115200);
+}
+
+void loop() {
+  // Lecture des états des capteurs
+  int leftSensorValue = digitalRead(LEFT_SENSOR_PIN);    // Lecture du capteur gauche
+  int centerSensorValue = digitalRead(CENTER_SENSOR_PIN);// Lecture du capteur centre
+  int rightSensorValue = digitalRead(RIGHT_SENSOR_PIN);  // Lecture du capteur droit
+
+  // Affichage des valeurs des capteurs dans le moniteur série
+  Serial.print("Capteur gauche: ");
+  Serial.print(leftSensorValue);
+  Serial.print(" | Capteur centre: ");
+  Serial.print(centerSensorValue);
+  Serial.print(" | Capteur droit: ");
+  Serial.println(rightSensorValue);
+
+  // Pause avant la prochaine lecture
+  delay(100);
+}
